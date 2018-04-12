@@ -1,22 +1,20 @@
 PREFIX = /usr
 
 CC = cc
-
 CFLAGS 	= -std=c99 -pedantic -Wall -Werror
-LDFLAGS =
 
 SRC = juu.c
 OBJ = $(SRC:.c=.o)
 
 juu: $(OBJ)
-	$(CC) -o $@ $(OBJ) $(LDFLAGS)
+	$(CC) -o $@ $(OBJ)
 
 $(OBJ):
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
 
-install: all
+install: juu
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f juu $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/juu
