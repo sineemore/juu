@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 				break;
 
 			case '"':
-				/* String/property key start, see if clause on top (line 20) */
+				/* String/property key start, see if clause on top (line 22) */
 				putchar('"');
 				is_string = 1;
 				break;
