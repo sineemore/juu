@@ -3,6 +3,18 @@
 
 #define BUF_SIZE (1024 * 4)
 
+static void outc(char ch) {
+	if (EOF == putchar(ch)) {
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void outs(const char *str) {
+	if (EOF == fputs(str, stdout)) {
+		exit(EXIT_FAILURE);
+	}
+}
+
 int main(int argc, char **argv) {
 	
 	char buf[BUF_SIZE];
@@ -21,7 +33,7 @@ int main(int argc, char **argv) {
 
 			if (is_string) {
 				/* Inside quoted string */
-				putchar(ch);
+				outc(ch);
 				if (! escaped) {
 					if (ch == '"') {
 						/* Unescaped quote, string just ended */
@@ -46,45 +58,49 @@ int main(int argc, char **argv) {
 		
 			case '{':
 			case '[':
-				putchar(ch);
-				putchar('\n');
+				outc(ch);
+				outc('\n');
 				i = ++indent;
-				while (i-- > 0) fputs(placeholder, stdout);
+				while (i-- > 0) outs(placeholder);
 				break;
 	
 			case '}':
 			case ']':
-				putchar('\n');
+				outc('\n');
 				i = --indent;
-				while (i-- > 0) fputs(placeholder, stdout);
-				putchar(ch);
-				if (indent == 0) putchar('\n');
+				while (i-- > 0) outs(placeholder);
+				outc(ch);
+				if (indent == 0) outc('\n');
 				break;
 				
 			case ',':
-				putchar(',');
-				putchar('\n');
+				outc(',');
+				outc('\n');
 				i = indent;
-				while (i-- > 0) fputs(placeholder, stdout);
+				while (i-- > 0) outs(placeholder);
 				break;
 
 			case ':':
-				putchar(':');
-				putchar(' ');
+				outc(':');
+				outc(' ');
 				break;
 
 			case '"':
 				/* String/property key start, see if clause on top (line 22) */
-				putchar('"');
+				outc('"');
 				is_string = 1;
 				break;
 	
 			default:
 				/* Numbers, true, false, null */
-				putchar(ch);
+				outc(ch);
 				break;
 			}
 		}
+	}
+
+	if (ferror(stdin)) {
+		return EXIT_FAILURE;
 	}
 	
 	return EXIT_SUCCESS;
