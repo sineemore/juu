@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h> /* EXIT_SUCCESS */
 
-#define BUF_SIZE (1024 * 4)
+/* Buffer size for reading from stdin */
+#define BUFFER_SIZE (1024 * 4)
 
 static void outc(char ch) {
 	if (EOF == putchar(ch)) {
@@ -9,27 +10,35 @@ static void outc(char ch) {
 	}
 }
 
-static void outs(const char *str) {
-	if (EOF == fputs(str, stdout)) {
-		exit(EXIT_FAILURE);
+static void fputs_repeat(const char *str, size_t count) {
+	while (count-- > 0) {
+		int value = fputs(str, stdout);
+		if (value == EOF) {
+			exit(EXIT_FAILURE);
+		}
 	}
 }
 
 int main(int argc, char **argv) {
 	
-	char buf[BUF_SIZE];
+	char buffer[BUFFER_SIZE];
 	const char placeholder[] = "  ";
 	unsigned int indent = 0;
-	unsigned int i = 0;
-	unsigned int k = 0;
 	char is_string = 0;
 	char escaped = 0;
-	char ch;
-	size_t n;
-	
-	while (0 < (n = fread(&buf, sizeof(char), BUF_SIZE, stdin))) {
-		for (k = 0; k < n; k++) {
-			ch = buf[k];
+
+	/* Read stdin until EOF */
+	while (!feof(stdin)) {
+		
+		size_t n = fread(&buffer, sizeof(char), BUFFER_SIZE, stdin);
+
+		if (n != BUFFER_SIZE && ferror(stdin)) {
+			/* Error reading stdin */
+			exit(EXIT_FAILURE);
+		}
+
+		for (size_t k = 0; k < n; k++) {
+			char ch = buffer[k];
 
 			if (is_string) {
 				/* Inside quoted string */
@@ -60,15 +69,15 @@ int main(int argc, char **argv) {
 			case '[':
 				outc(ch);
 				outc('\n');
-				i = ++indent;
-				while (i-- > 0) outs(placeholder);
+				indent++;
+				fputs_repeat(placeholder, indent);
 				break;
 	
 			case '}':
 			case ']':
 				outc('\n');
-				i = --indent;
-				while (i-- > 0) outs(placeholder);
+				indent--;
+				fputs_repeat(placeholder, indent);
 				outc(ch);
 				if (indent == 0) outc('\n');
 				break;
@@ -76,8 +85,7 @@ int main(int argc, char **argv) {
 			case ',':
 				outc(',');
 				outc('\n');
-				i = indent;
-				while (i-- > 0) outs(placeholder);
+				fputs_repeat(placeholder, indent);
 				break;
 
 			case ':':
@@ -86,7 +94,7 @@ int main(int argc, char **argv) {
 				break;
 
 			case '"':
-				/* String/property key start, see if clause on top (line 22) */
+				/* String/property key start, see if clause on top */
 				outc('"');
 				is_string = 1;
 				break;
@@ -99,9 +107,5 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (ferror(stdin)) {
-		return EXIT_FAILURE;
-	}
-	
 	return EXIT_SUCCESS;
 }
